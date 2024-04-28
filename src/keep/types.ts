@@ -15,6 +15,10 @@ interface Attachment {
   mimetype: string;
 }
 
+export interface Label {
+  name: string;
+}
+
 export interface GoogleKeepNote {
   color: string;
   isTrashed: boolean;
@@ -29,4 +33,5 @@ export interface GoogleKeepNote {
   createdTimestampUsec: number;
   sourceFilePath: string;
   sourceFileName: string;
+  labels?: Label[];
 }

@@ -11,13 +11,18 @@ export const main = async (settings: Settings) => {
     output: outputFolderPath,
     mode,
     includeArchive,
+    includeTrashed,
+    includeMetadata,
+    includeRelation,
+    emoji,
   } = settings;
   let notes: GoogleKeepNote[] = [];
 
   try {
     const maybeNotes = await ingestKeepJsonFiles(
       inputFolderPath,
-      includeArchive
+      includeArchive,
+      includeTrashed
     );
     notes = maybeNotes;
   } catch (err) {
@@ -35,7 +40,13 @@ export const main = async (settings: Settings) => {
 
   for (const note of notes) {
     try {
-      const anyBlockPage = convertToAnyBlockPage(note, mode);
+      const anyBlockPage = convertToAnyBlockPage(
+        note,
+        mode,
+        emoji,
+        includeMetadata,
+        includeRelation
+      );
       const filePath = await writeAnyBlockPageToFile(
         anyBlockPage,
         note.sourceFileName,

@@ -82,12 +82,24 @@ const isGoogleKeepNote = (object: any): object is GoogleKeepNote => {
     }
   }
 
+  if (object.labels) {
+    if (!Array.isArray(object.labels)) {
+      throw new Error("labels is not an array");
+    }
+    for (const label of object.labels) {
+      if (typeof label.name !== "string") {
+        throw new Error("Invalid label item");
+      }
+    }
+  }
+
   return true;
 };
 
 export const ingestKeepJsonFiles = async (
   folderPath: string,
-  includeArchive: boolean
+  includeArchive: boolean,
+  includeTrashed: boolean
 ): Promise<GoogleKeepNote[]> => {
   const notes: GoogleKeepNote[] = [];
   const files = await fs.readdir(folderPath);
@@ -100,6 +112,9 @@ export const ingestKeepJsonFiles = async (
         const data = await fs.readFile(filePath, "utf8");
         const note = parseGoogleKeepNote(data, filePath);
         if (note.isArchived && !includeArchive) {
+          continue;
+        }
+        if (note.isTrashed && !includeTrashed) {
           continue;
         }
         notes.push(note);

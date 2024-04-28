@@ -1,6 +1,9 @@
 import * as dotenv from "dotenv";
-import { convertMicrosecondsToSeconds, getEnvVar } from "../utils";
 import { Mode } from "../cli";
+import { GoogleKeepNote } from "../keep/types";
+import { convertMicrosecondsToSeconds, getEnvVar } from "../utils";
+import { createBlock } from "./blocks";
+import { relationLinks } from "./config";
 import {
   Block,
   BlockWithId,
@@ -8,9 +11,6 @@ import {
   ObjectType,
   Page,
 } from "./types";
-import { relationLinks } from "./config";
-import { createBlock } from "./blocks";
-import { GoogleKeepNote } from "../keep/types";
 dotenv.config();
 
 const genTitleFromDate = (createdTimestampUsec: number) => {
@@ -53,10 +53,20 @@ const getLayoutNumber = (objectType: ObjectType): number => {
 
 const createCoreBlocks = (
   note: GoogleKeepNote,
-  objectType: ObjectType
+  objectType: ObjectType,
+  includeDescriptionRelation: boolean
 ): BlockWithId[] => {
   const headerBlock = createBlock("Header", { objectType });
   const featuredRelationsBlock = createBlock("FeaturedRelations", undefined);
+
+  const descriptionRelationBlock: BlockWithId[] = [];
+  if (includeDescriptionRelation) {
+    descriptionRelationBlock.push(
+      createBlock("Relation", {
+        relationKey: "description",
+      })
+    );
+  }
 
   const textBlocks: BlockWithId[] = note.textContent
     ? note.textContent
@@ -81,6 +91,7 @@ const createCoreBlocks = (
 
   let allBlocks: BlockWithId[] = [
     headerBlock,
+    ...descriptionRelationBlock,
     ...textBlocks,
     ...listBlocks,
     ...annotationBlocks,
@@ -98,9 +109,14 @@ const createCoreBlocks = (
 
 const createBlocks = (
   note: GoogleKeepNote,
-  objectType: ObjectType
+  objectType: ObjectType,
+  includeDescriptionRelation: boolean
 ): Block[] => {
-  const allBlocks = createCoreBlocks(note, objectType);
+  const allBlocks = createCoreBlocks(
+    note,
+    objectType,
+    includeDescriptionRelation
+  );
 
   const nonChildrenIds = ["title", "description", "featuredRelations"];
   const blocks = allBlocks.map((blockWithId) => blockWithId.block);
@@ -126,6 +142,8 @@ const createAnyBlockPage = (config: CreateAnyBlockPageConfig): Page => {
     editedTimestamp,
     objectType,
     sourcePath,
+    description,
+    emoji,
   } = config;
 
   const tagId = getEnvVar("TAG_ID", "");
@@ -145,9 +163,9 @@ const createAnyBlockPage = (config: CreateAnyBlockPageConfig): Page => {
           backlinks: [],
           createdDate: convertMicrosecondsToSeconds(createdTimestamp),
           creator: "",
-          description: "",
+          description: description,
           featuredRelations,
-          iconEmoji: "",
+          iconEmoji: emoji,
           id: "",
           lastModifiedBy: "",
           lastModifiedDate: convertMicrosecondsToSeconds(editedTimestamp),
@@ -171,7 +189,10 @@ const createAnyBlockPage = (config: CreateAnyBlockPageConfig): Page => {
 
 export const convertToAnyBlockPage = (
   note: GoogleKeepNote,
-  mode: Mode
+  mode: Mode,
+  emoji: string,
+  includeMetadata: boolean,
+  includeRelation: boolean
 ): Page => {
   const hasTitle = note.title !== undefined && note.title !== "";
   const objectType = getObjectType(mode, hasTitle);
@@ -181,7 +202,35 @@ export const convertToAnyBlockPage = (
     titleText = note.title || genTitleFromDate(note.createdTimestampUsec);
   }
 
-  const blocks = createBlocks(note, objectType);
+  let description = "";
+  if (includeMetadata) {
+    const descriptionArray: string[] = [];
+    if (note.color && note.color !== "DEFAULT") {
+      descriptionArray.push(`Color: ${note.color}`);
+    }
+    if (note.isTrashed) {
+      descriptionArray.push("Trashed");
+    }
+    if (note.isPinned) {
+      descriptionArray.push("Pinned");
+    }
+    if (note.isArchived) {
+      descriptionArray.push("Archived");
+    }
+    if (note.labels) {
+      descriptionArray.push(
+        `Labels: ${note.labels.map((label) => label.name).join(", ")}`
+      );
+    }
+
+    description = descriptionArray.join(" | ");
+  }
+
+  const blocks = createBlocks(
+    note,
+    objectType,
+    includeMetadata && includeRelation
+  );
 
   return createAnyBlockPage({
     blocks,
@@ -190,5 +239,7 @@ export const convertToAnyBlockPage = (
     editedTimestamp: note.userEditedTimestampUsec,
     objectType,
     sourcePath: note.sourceFilePath,
+    description,
+    emoji,
   });
 };

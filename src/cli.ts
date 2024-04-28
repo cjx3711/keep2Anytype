@@ -8,6 +8,10 @@ export interface Settings {
   output: string;
   mode: Mode;
   includeArchive: boolean;
+  includeTrashed: boolean;
+  includeMetadata: boolean;
+  includeRelation: boolean;
+  emoji: string;
 }
 
 const isMode = (mode: any): mode is Mode => {
@@ -37,9 +41,36 @@ const argv = yargs
     type: "boolean",
     default: false,
   })
+  .option("trashed", {
+    alias: "t",
+    description: "Include trashed Keep notes",
+    type: "boolean",
+    default: false,
+  })
+  .option("emoji", {
+    alias: "e",
+    description: "Include emoji in the output",
+    type: "string",
+    default: "",
+  })
+  .option("metadata", {
+    alias: "d",
+    description: "Include additional metadata in the output",
+    type: "boolean",
+    default: false,
+  })
+  .option("relation", {
+    alias: "r",
+    description:
+      "Include the description relation in the body of the object. Only works if metadata is enabled.",
+    type: "boolean",
+    default: false,
+  })
   .demandOption(["path", "output"])
   .help()
   .alias("help", "h").argv;
+
+console.log("Settings:", argv);
 
 if (argv.path === argv.output) {
   console.error(`Error: path and output cannot be the same`);
@@ -56,5 +87,9 @@ const settings: Settings = {
   output: argv.output,
   mode: argv.mode,
   includeArchive: argv.archive,
+  includeTrashed: argv.trashed,
+  includeMetadata: argv.metadata,
+  includeRelation: argv.relation,
+  emoji: argv.emoji,
 };
 main(settings);

@@ -13,6 +13,7 @@ import {
   Mark,
   Marks,
   Range,
+  RelationConfig,
   Restrictions,
 } from "./types";
 import { extractUrls } from "../utils";
@@ -112,6 +113,16 @@ const titleBlockHandler: BlockHandler<never> = {
   },
 };
 
+const relationBlockHandler: BlockHandler<RelationConfig> = {
+  prepareContent(config) {
+    return {
+      relation: {
+        key: config.relationKey,
+      },
+    };
+  },
+};
+
 const textBlockHandler: BlockHandler<ContentfulConfig> = {
   prepareContent(config) {
     return {
@@ -159,6 +170,7 @@ const handlers: HandlersMap = {
   FeaturedRelations: featuredRelationsBlockHandler,
   Description: descriptionBlockHandler,
   Title: titleBlockHandler,
+  Relation: relationBlockHandler,
 };
 
 export const createBlock = <T extends BlockType>(

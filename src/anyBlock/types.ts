@@ -27,6 +27,9 @@ export interface Block {
   fields?: Fields;
   featuredRelations?: any;
   smartblock?: any;
+  relation?: {
+    key: string;
+  };
 }
 
 export interface Restrictions {
@@ -98,7 +101,12 @@ type SpecialBlockType =
   | "FeaturedRelations"
   | "Description"
   | "Title";
-export type BlockType = "Text" | "List" | "Annotation" | SpecialBlockType;
+export type BlockType =
+  | "Text"
+  | "List"
+  | "Annotation"
+  | "Relation"
+  | SpecialBlockType;
 
 export interface HeaderConfig {
   objectType: ObjectType;
@@ -106,6 +114,10 @@ export interface HeaderConfig {
 
 export interface ContentfulConfig {
   content: string;
+}
+
+export interface RelationConfig {
+  relationKey: string;
 }
 
 export interface ListConfig extends ContentfulConfig {
@@ -124,6 +136,7 @@ export type HandlerConfig = {
   Text: ContentfulConfig;
   List: ListConfig;
   Annotation: AnnotationConfig;
+  Relation: RelationConfig;
 };
 
 export type HandlersMap = {
@@ -141,4 +154,6 @@ export interface CreateAnyBlockPageConfig {
   createdTimestamp: number;
   editedTimestamp: number;
   sourcePath: string;
+  description: string;
+  emoji: string;
 }
